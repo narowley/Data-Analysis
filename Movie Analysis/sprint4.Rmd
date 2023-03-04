@@ -1,0 +1,105 @@
+---
+title: "Sprint 4 - Data Analysis"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(mosaic)
+library(tidyverse)
+
+movies <- read.csv("Movies_gross_rating.csv", header = TRUE)
+```
+
+### Question: Which Genre Generates the Most Gross?
+
+```{r, fig.width=8}
+movies %>% 
+  mutate(Profit = Gross - Budget) %>% 
+  group_by(Genre) %>% 
+  summarise("Average Gross" = mean(Gross),
+            "Average Profit" = mean(Profit),
+            Total_Gross = sum(Gross)) %>% 
+  ggplot(aes(x = reorder(Genre, -Total_Gross), y = Total_Gross)) + 
+  theme_bw()+
+  geom_bar(stat = "identity")+
+  scale_y_continuous(labels=scales::dollar_format()) +
+  labs(x = "Genre", y = "Total Gross", title="Total Gross for each Movie Genre", subtitle = "1989 - 2014")+
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.75))
+```
+
+This graphic details the relationship between genre and total gross. We can see that action is the highest grosser, with over 30 billion dollars, followed closely by animation and comedy. The lowest grossing genre is history and western.
+
+### Question: What is the Distribution of MPAA Ratings for each Genre?
+
+```{r fig.width=8, message=FALSE, warning=FALSE}
+movies %>% 
+  mutate(Profit = Gross - Budget) %>% 
+  group_by(Genre) %>% 
+  count(MPAA.Rating) %>% 
+  group_by(Genre) %>% 
+  summarise(total = sum(n),
+            Genre = Genre,
+            MPAA.Rating = MPAA.Rating,
+            n = n) %>% 
+  ggplot(aes(x = reorder(Genre, -total), y = n, fill = MPAA.Rating)) + 
+  theme_bw()+
+  geom_bar(stat = "identity") +
+  labs(x = "Genre", y = "Movie Count", title = "Distribution of Movie Ratings based on Genre", subtitle = "1989 - 2014", fill = "MPAA Rating") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.75))
+```
+
+This data is designed to show off the distribution of movie ratings based off the genre of the movie as well as the distribution of movies. We can see that comedy is the genre with the highest number of movies, followed by action. Animation has the highest number of G and PG movies. Action has the highest number of PG-13 movies. Drama has the highest number of R rated movies.
+
+### Question: Which Genre has the Highest Rated Movies?
+
+```{r, fig.width=8}
+movies %>% 
+  group_by(Genre) %>%
+  filter(Rating >= 0) %>% 
+  summarise(avg_rating = mean(Rating)) %>% 
+  ggplot(aes(x = reorder(Genre,-avg_rating), y = avg_rating)) + 
+  geom_bar(stat = "identity") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.75))+
+  coord_cartesian(ylim=c(5.5, 8)) +
+  labs(x = "Genre", y = "Average Rating", title = "Average Movie Rating for Each Genre", subtitle = "1989 - 2014")
+```
+
+Over the past 40 years, history, fantasy, and western are the highest rated genres. While this is good, in theory, these genres have the lowest number of movies produced within those 40 years. Drama shows the highest potential, as it has the 4th highest number of movies made while ranked 5th in average movie rating.
+
+### Question: What is the Relationship Between Budget and Gross?
+
+```{r fig.width=8, message=FALSE, warning=FALSE}
+movies %>% 
+  ggplot(aes(x = Budget, y = Gross)) +
+  scale_y_continuous(labels=scales::dollar_format()) +
+  scale_x_continuous(labels=scales::dollar_format()) +
+  theme_bw() +
+  geom_smooth(method = "lm", se = FALSE)+
+  geom_point() +
+  geom_text(aes(label= ifelse(Gross > quantile(Gross, 0.987),
+     as.character(Title),'')),hjust=0,vjust=0) +
+  labs(title = "Comparison Between Movie's Budget and Gross", subtitle = "1989 - 2014")
+```
+
+From our graphic, we can see that there isn't a strong relationship between budget and gross, but movies between \$125,000,000 and \$250,000,000 do the best.
+
+### Qustion: What is the Distribution of Gross Between each MPAA Rating?
+
+```{r}
+movies %>% 
+  group_by(MPAA.Rating) %>% 
+  summarise(Total = sum(Gross)) %>% 
+  ggplot(aes(x="", y=Total, fill=MPAA.Rating))+
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  theme_void() +
+  labs(title = "Distribution of Gross Based off Movie Rating for all Movies from 1989 - 2014")
+```
+
+We can see from this data that PG-13 movies make significantly more money than any other rating, with more than half of the total gross of all movies coming PG-13 movies. PG movies are a close second, taking up about a quarter of all gross, with G and R taking up the remaining percentage.
+
